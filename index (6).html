@@ -1,0 +1,1129 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Raio-X Sintático — ENEM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0a0f;
+  --surface:#12121a;
+  --surface2:#1a1a25;
+  --surface3:#22222f;
+  --border:#2a2a3d;
+  --border2:#3a3a55;
+  --accent:#f0c040;
+  --accent2:#e85d3a;
+  --accent3:#4ecdc4;
+  --text:#f0ede8;
+  --text2:#9a97a8;
+  --text3:#5a576a;
+  --bebas:'Bebas Neue',display;
+  --dm:'DM Sans',sans-serif;
+  --mono:'JetBrains Mono',monospace;
+  --r:10px;
+}
+html{scroll-behavior:smooth}
+body{font-family:var(--dm);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+
+/* ── SCANLINE TEXTURE ── */
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.03) 2px,rgba(0,0,0,0.03) 4px);
+}
+
+/* ── NOISE OVERLAY ── */
+body::after{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opacity:0.025;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+}
+
+/* ── GLOW ORBS ── */
+.orb{position:fixed;border-radius:50%;pointer-events:none;z-index:0;filter:blur(80px);opacity:0.12}
+.orb-1{width:400px;height:400px;background:var(--accent);top:-100px;right:-100px}
+.orb-2{width:300px;height:300px;background:var(--accent2);bottom:100px;left:-80px}
+.orb-3{width:250px;height:250px;background:var(--accent3);top:50%;left:50%;transform:translate(-50%,-50%)}
+
+/* ── NAV ── */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 2rem;height:64px;
+  background:rgba(10,10,15,0.85);backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);
+}
+.nav-logo{font-family:var(--bebas);font-size:22px;letter-spacing:2px;color:var(--accent)}
+.nav-logo span{color:var(--text2);font-size:12px;font-family:var(--mono);display:block;letter-spacing:3px;margin-top:-4px}
+.nav-links{display:flex;gap:4px}
+.nav-btn{
+  background:transparent;border:1px solid transparent;
+  border-radius:8px;padding:8px 16px;color:var(--text2);
+  font-family:var(--dm);font-size:13px;font-weight:500;cursor:pointer;
+  transition:all 0.2s;
+}
+.nav-btn:hover,.nav-btn.active{background:var(--surface2);border-color:var(--border2);color:var(--text)}
+.nav-btn.active{color:var(--accent)}
+
+/* ── LAYOUT ── */
+.page{display:none;padding-top:64px;min-height:100vh;position:relative;z-index:1}
+.page.active{display:block}
+.container{max-width:1100px;margin:0 auto;padding:3rem 2rem}
+
+/* ── HERO ── */
+.hero{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;padding:6rem 2rem 4rem;position:relative;
+}
+.hero-tag{
+  font-family:var(--mono);font-size:11px;letter-spacing:3px;
+  color:var(--accent);border:1px solid rgba(240,192,64,0.3);
+  padding:6px 14px;border-radius:20px;margin-bottom:2rem;
+  background:rgba(240,192,64,0.06);
+}
+.hero-title{
+  font-family:var(--bebas);font-size:clamp(60px,10vw,110px);
+  line-height:0.9;letter-spacing:2px;
+  background:linear-gradient(135deg,var(--text) 0%,var(--accent) 50%,var(--accent2) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;margin-bottom:1.5rem;
+}
+.hero-sub{font-size:17px;color:var(--text2);max-width:480px;line-height:1.7;margin-bottom:2.5rem}
+.hero-actions{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.btn{
+  padding:12px 24px;border-radius:var(--r);font-family:var(--dm);
+  font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s;border:none;
+}
+.btn-primary{background:var(--accent);color:#0a0a0f}
+.btn-primary:hover{background:#f5d060;transform:translateY(-1px)}
+.btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border2)}
+.btn-secondary:hover{border-color:var(--border2);background:var(--surface3)}
+.btn-danger{background:rgba(232,93,58,0.15);color:var(--accent2);border:1px solid rgba(232,93,58,0.3)}
+.btn-danger:hover{background:rgba(232,93,58,0.25)}
+.btn-success{background:rgba(78,205,196,0.15);color:var(--accent3);border:1px solid rgba(78,205,196,0.3)}
+.btn-success:hover{background:rgba(78,205,196,0.25)}
+.btn-sm{padding:7px 14px;font-size:12px}
+
+/* ── STATS ROW ── */
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:3rem}
+.stat-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+  padding:1.5rem;text-align:center;
+}
+.stat-number{font-family:var(--bebas);font-size:42px;color:var(--accent);line-height:1}
+.stat-label{font-family:var(--mono);font-size:11px;color:var(--text3);letter-spacing:2px;margin-top:4px}
+
+/* ── SECTION HEADER ── */
+.section-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:1.5rem;padding-bottom:1rem;border-bottom:1px solid var(--border);
+}
+.section-title{font-family:var(--bebas);font-size:28px;letter-spacing:2px;color:var(--text)}
+.section-title span{color:var(--accent)}
+
+/* ── FILTERS ── */
+.filters{display:flex;gap:8px;margin-bottom:1.5rem;flex-wrap:wrap}
+.filter-chip{
+  padding:6px 14px;border-radius:20px;font-size:12px;font-family:var(--mono);
+  cursor:pointer;border:1px solid var(--border);background:var(--surface);
+  color:var(--text2);transition:all 0.2s;
+}
+.filter-chip:hover,.filter-chip.active{background:rgba(240,192,64,0.1);border-color:rgba(240,192,64,0.4);color:var(--accent)}
+
+/* ── QUESTION CARD ── */
+.q-grid{display:flex;flex-direction:column;gap:12px}
+.q-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  overflow:hidden;transition:border-color 0.2s;
+}
+.q-card:hover{border-color:var(--border2)}
+.q-card-header{
+  display:flex;align-items:flex-start;gap:12px;padding:1.25rem 1.5rem;cursor:pointer;
+}
+.q-number{
+  font-family:var(--bebas);font-size:20px;color:var(--accent);
+  min-width:32px;margin-top:2px;
+}
+.q-trecho{font-size:15px;font-style:italic;color:var(--text);line-height:1.5;flex:1}
+.q-badges{display:flex;gap:6px;margin-left:auto;flex-shrink:0;align-items:flex-start}
+.badge{
+  font-family:var(--mono);font-size:10px;padding:4px 8px;border-radius:6px;
+  white-space:nowrap;
+}
+.badge-erro{background:rgba(232,93,58,0.15);color:#f0856a;border:1px solid rgba(232,93,58,0.2)}
+.badge-ok{background:rgba(78,205,196,0.1);color:#4ecdc4;border:1px solid rgba(78,205,196,0.2)}
+.badge-cv{background:rgba(240,192,64,0.1);color:var(--accent);border:1px solid rgba(240,192,64,0.2)}
+.badge-cn{background:rgba(167,139,250,0.1);color:#a78bfa;border:1px solid rgba(167,139,250,0.2)}
+.badge-rv{background:rgba(248,113,113,0.1);color:#f87171;border:1px solid rgba(248,113,113,0.2)}
+.badge-rn{background:rgba(96,165,250,0.1);color:#60a5fa;border:1px solid rgba(96,165,250,0.2)}
+
+.q-body{
+  border-top:1px solid var(--border);padding:1.25rem 1.5rem;
+  display:none;background:var(--surface2);
+}
+.q-body.open{display:block}
+.q-section{margin-bottom:1rem}
+.q-section:last-child{margin-bottom:0}
+.q-section-label{font-family:var(--mono);font-size:10px;color:var(--text3);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px}
+.q-section-content{font-size:14px;color:var(--text);line-height:1.6}
+.q-correction{
+  font-family:var(--mono);font-size:13px;color:var(--accent3);
+  background:rgba(78,205,196,0.06);border:1px solid rgba(78,205,196,0.15);
+  border-radius:8px;padding:10px 14px;margin-top:6px;
+}
+.q-options{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.q-opt{
+  font-size:13px;padding:8px 12px;border-radius:8px;
+  background:var(--surface3);color:var(--text2);border:1px solid transparent;
+}
+.q-opt.correct-opt{
+  background:rgba(78,205,196,0.08);color:var(--accent3);
+  border-color:rgba(78,205,196,0.2);
+}
+.q-actions{display:flex;gap:8px;margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border)}
+
+/* ── MODAL ── */
+.modal-overlay{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);
+  backdrop-filter:blur(8px);z-index:200;align-items:center;justify-content:center;
+  padding:1rem;
+}
+.modal-overlay.open{display:flex}
+.modal{
+  background:var(--surface);border:1px solid var(--border2);border-radius:16px;
+  width:100%;max-width:640px;max-height:90vh;overflow-y:auto;
+  box-shadow:0 32px 80px rgba(0,0,0,0.8);
+}
+.modal-header{
+  padding:1.5rem 1.75rem;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;background:var(--surface);z-index:1;
+}
+.modal-title{font-family:var(--bebas);font-size:22px;letter-spacing:2px;color:var(--text)}
+.modal-close{
+  background:var(--surface2);border:1px solid var(--border);border-radius:8px;
+  width:32px;height:32px;cursor:pointer;color:var(--text2);font-size:18px;
+  display:flex;align-items:center;justify-content:center;transition:all 0.2s;
+}
+.modal-close:hover{background:var(--surface3);color:var(--text)}
+.modal-body{padding:1.5rem 1.75rem}
+.modal-footer{padding:1rem 1.75rem;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end}
+
+/* ── FORM ── */
+.form-group{margin-bottom:1.25rem}
+.form-label{display:block;font-family:var(--mono);font-size:11px;color:var(--text2);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px}
+.form-input,.form-textarea,.form-select{
+  width:100%;background:var(--surface2);border:1px solid var(--border2);
+  border-radius:var(--r);padding:12px 14px;color:var(--text);
+  font-family:var(--dm);font-size:14px;transition:border-color 0.2s;outline:none;
+}
+.form-input:focus,.form-textarea:focus,.form-select:focus{border-color:rgba(240,192,64,0.5)}
+.form-textarea{resize:vertical;min-height:90px;line-height:1.6}
+.form-select option{background:var(--surface2)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-radio-group{display:flex;gap:10px}
+.form-radio{
+  flex:1;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r);
+  padding:12px;cursor:pointer;transition:all 0.2s;text-align:center;
+}
+.form-radio.selected{background:rgba(240,192,64,0.1);border-color:rgba(240,192,64,0.4)}
+.form-radio input{display:none}
+.form-radio-label{font-size:13px;font-weight:600}
+.form-radio.selected .form-radio-label{color:var(--accent)}
+
+/* ── OPTIONS INPUT ── */
+.options-list{display:flex;flex-direction:column;gap:8px;margin-top:6px}
+.option-row{display:flex;gap:8px;align-items:center}
+.opt-check{
+  width:32px;height:32px;border-radius:8px;background:var(--surface2);
+  border:1px solid var(--border2);cursor:pointer;display:flex;align-items:center;
+  justify-content:center;font-size:14px;flex-shrink:0;transition:all 0.2s;color:var(--text3);
+}
+.opt-check.checked{background:rgba(78,205,196,0.1);border-color:var(--accent3);color:var(--accent3)}
+.opt-input{flex:1;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:9px 12px;color:var(--text);font-size:13px;font-family:var(--dm);outline:none;transition:border-color 0.2s}
+.opt-input:focus{border-color:rgba(240,192,64,0.4)}
+.opt-input.correct-input{border-color:rgba(78,205,196,0.4);background:rgba(78,205,196,0.04)}
+
+/* ── SEARCH ── */
+.search-bar{
+  display:flex;align-items:center;gap:10px;
+  background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);
+  padding:0 14px;margin-bottom:1.25rem;
+}
+.search-bar svg{flex-shrink:0;opacity:0.4}
+.search-bar input{flex:1;background:transparent;border:none;padding:12px 0;color:var(--text);font-size:14px;font-family:var(--dm);outline:none}
+.search-bar input::placeholder{color:var(--text3)}
+
+/* ── EMPTY STATE ── */
+.empty-state{
+  text-align:center;padding:4rem 2rem;
+  border:1px dashed var(--border2);border-radius:12px;
+}
+.empty-icon{font-size:48px;margin-bottom:1rem;opacity:0.5}
+.empty-title{font-family:var(--bebas);font-size:22px;letter-spacing:2px;color:var(--text2);margin-bottom:8px}
+.empty-sub{color:var(--text3);font-size:13px}
+
+/* ── TOAST ── */
+.toast{
+  position:fixed;bottom:2rem;right:2rem;z-index:300;
+  background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);
+  padding:12px 18px;font-size:14px;font-family:var(--dm);
+  display:flex;align-items:center;gap:10px;
+  transform:translateY(100px);opacity:0;transition:all 0.3s;
+  box-shadow:0 8px 32px rgba(0,0,0,0.5);max-width:320px;
+}
+.toast.show{transform:translateY(0);opacity:1}
+.toast-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.toast.success .toast-dot{background:var(--accent3)}
+.toast.warning .toast-dot{background:var(--accent)}
+.toast.error .toast-dot{background:var(--accent2)}
+
+/* ── IMPORT/EXPORT ── */
+.io-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  padding:1.5rem;margin-bottom:1rem;
+}
+.io-title{font-family:var(--bebas);font-size:18px;letter-spacing:1px;color:var(--text);margin-bottom:6px}
+.io-sub{font-size:13px;color:var(--text2);margin-bottom:1.25rem;line-height:1.5}
+
+/* ── JOGO INTEGRADO (mini) ── */
+.jogo-banner{
+  background:linear-gradient(135deg,rgba(240,192,64,0.08) 0%,rgba(232,93,58,0.06) 100%);
+  border:1px solid rgba(240,192,64,0.2);border-radius:16px;padding:2rem;
+  display:flex;align-items:center;justify-content:space-between;gap:2rem;
+  margin-bottom:2rem;
+}
+.jogo-banner-text h2{font-family:var(--bebas);font-size:30px;letter-spacing:2px;color:var(--accent);margin-bottom:6px}
+.jogo-banner-text p{font-size:14px;color:var(--text2);max-width:380px;line-height:1.6}
+
+/* ── RESPONSIVE ── */
+@media(max-width:640px){
+  .form-row{grid-template-columns:1fr}
+  .stats-row{grid-template-columns:1fr}
+  .hero-title{font-size:60px}
+  .jogo-banner{flex-direction:column}
+  .nav-links .nav-btn:not(.active){display:none}
+}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.fade-up{animation:fadeUp 0.5s ease forwards}
+.fade-up-2{animation:fadeUp 0.5s 0.1s ease both}
+.fade-up-3{animation:fadeUp 0.5s 0.2s ease both}
+
+/* ── CONFIRM DIALOG ── */
+.confirm-overlay{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);
+  backdrop-filter:blur(4px);z-index:250;align-items:center;justify-content:center;
+}
+.confirm-overlay.open{display:flex}
+.confirm-box{
+  background:var(--surface);border:1px solid var(--border2);border-radius:14px;
+  padding:2rem;max-width:380px;width:90%;text-align:center;
+}
+.confirm-icon{font-size:36px;margin-bottom:1rem}
+.confirm-title{font-family:var(--bebas);font-size:22px;letter-spacing:1px;margin-bottom:8px}
+.confirm-msg{color:var(--text2);font-size:14px;line-height:1.6;margin-bottom:1.5rem}
+.confirm-actions{display:flex;gap:10px;justify-content:center}
+</style>
+</head>
+<body>
+
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">
+    Raio-X Sintático
+    <span>BANCO DE QUESTÕES</span>
+  </div>
+  <div class="nav-links">
+    <button class="nav-btn active" onclick="goPage('home')">Início</button>
+    <button class="nav-btn" onclick="goPage('banco')">Banco de Questões</button>
+    <button class="nav-btn" onclick="goPage('gerenciar')">Gerenciar</button>
+    <button class="nav-btn" onclick="goPage('importar')">Importar / Exportar</button>
+  </div>
+</nav>
+
+<!-- ══ PÁGINA HOME ══ -->
+<div class="page active" id="page-home">
+  <div class="hero">
+    <div class="hero-tag fade-up">ENEM · CONCORDÂNCIA · REGÊNCIA · GRAMÁTICA</div>
+    <h1 class="hero-title fade-up-2">RAIO-X<br>SINTÁTICO</h1>
+    <p class="hero-sub fade-up-3">Banco de questões interativo para o jogo competitivo de gramática. Crie, edite e organize perguntas com resposta e justificativa.</p>
+    <div class="hero-actions fade-up-3">
+      <button class="btn btn-primary" onclick="goPage('banco')">Ver questões</button>
+      <button class="btn btn-secondary" onclick="abrirModal()">+ Nova questão</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="stats-row" id="stats-row">
+      <div class="stat-card">
+        <div class="stat-number" id="stat-total">0</div>
+        <div class="stat-label">Total de questões</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="stat-erros">0</div>
+        <div class="stat-label">Com erro</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="stat-corretos">0</div>
+        <div class="stat-label">Corretos</div>
+      </div>
+    </div>
+
+    <div class="jogo-banner">
+      <div class="jogo-banner-text">
+        <h2>Pronto para jogar?</h2>
+        <p>O banco tem <strong id="jogo-count">0</strong> questões cadastradas. Abra o jogo completo em uma nova aba para usar com sua turma.</p>
+      </div>
+      <button class="btn btn-primary" onclick="abrirJogo()">Abrir o jogo ↗</button>
+    </div>
+
+    <div class="section-header">
+      <div class="section-title">Últimas questões</div>
+      <button class="btn btn-secondary btn-sm" onclick="goPage('banco')">Ver todas →</button>
+    </div>
+    <div id="home-q-list" class="q-grid"></div>
+  </div>
+</div>
+
+<!-- ══ PÁGINA BANCO ══ -->
+<div class="page" id="page-banco">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-title">Banco de <span>Questões</span></div>
+      <button class="btn btn-primary btn-sm" onclick="abrirModal()">+ Adicionar</button>
+    </div>
+
+    <div class="search-bar">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" placeholder="Buscar por trecho, categoria..." id="search-input" oninput="renderBanco()">
+    </div>
+
+    <div class="filters" id="filters">
+      <div class="filter-chip active" data-filter="todos" onclick="setFilter('todos',this)">Todos</div>
+      <div class="filter-chip" data-filter="com-erro" onclick="setFilter('com-erro',this)">Com erro</div>
+      <div class="filter-chip" data-filter="correto" onclick="setFilter('correto',this)">Correto</div>
+      <div class="filter-chip" data-filter="cv" onclick="setFilter('cv',this)">Conc. Verbal</div>
+      <div class="filter-chip" data-filter="cn" onclick="setFilter('cn',this)">Conc. Nominal</div>
+      <div class="filter-chip" data-filter="rv" onclick="setFilter('rv',this)">Reg. Verbal</div>
+      <div class="filter-chip" data-filter="rn" onclick="setFilter('rn',this)">Reg. Nominal</div>
+    </div>
+
+    <div id="banco-q-list" class="q-grid"></div>
+  </div>
+</div>
+
+<!-- ══ PÁGINA GERENCIAR ══ -->
+<div class="page" id="page-gerenciar">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-title">Gerenciar <span>Banco</span></div>
+      <button class="btn btn-primary btn-sm" onclick="abrirModal()">+ Nova questão</button>
+    </div>
+
+    <div id="gerenciar-list" class="q-grid"></div>
+  </div>
+</div>
+
+<!-- ══ PÁGINA IMPORTAR/EXPORTAR ══ -->
+<div class="page" id="page-importar">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-title">Importar / <span>Exportar</span></div>
+    </div>
+
+    <div class="io-card">
+      <div class="io-title">Exportar banco de questões</div>
+      <div class="io-sub">Baixe todas as questões em formato JSON. Você pode guardar como backup ou compartilhar com outros professores.</div>
+      <button class="btn btn-success" onclick="exportar()">Exportar JSON</button>
+    </div>
+
+    <div class="io-card">
+      <div class="io-title">Importar questões (JSON)</div>
+      <div class="io-sub">Importe um arquivo JSON exportado anteriormente. As questões serão adicionadas ao banco existente sem substituir as atuais.</div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <input type="file" id="import-file" accept=".json" style="display:none" onchange="importar(event)">
+        <button class="btn btn-secondary" onclick="document.getElementById('import-file').click()">Selecionar arquivo JSON</button>
+        <span id="import-status" style="font-size:13px;color:var(--text3);font-family:var(--mono)"></span>
+      </div>
+    </div>
+
+    <div class="io-card">
+      <div class="io-title">Resetar para questões padrão</div>
+      <div class="io-sub">Remove todas as questões e restaura o banco com as 15 questões originais do jogo. Ação irreversível.</div>
+      <button class="btn btn-danger" onclick="confirmarReset()">Restaurar padrão</button>
+    </div>
+
+    <div class="io-card">
+      <div class="io-title">Apagar tudo</div>
+      <div class="io-sub">Remove permanentemente todas as questões do banco. Ação irreversível.</div>
+      <button class="btn btn-danger" onclick="confirmarApagar()">Apagar banco inteiro</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL CRIAR/EDITAR ══ -->
+<div class="modal-overlay" id="modal-overlay" onclick="fecharModalOverlay(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title">Nova Questão</div>
+      <button class="modal-close" onclick="fecharModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Trecho para análise</label>
+        <textarea class="form-textarea" id="f-trecho" placeholder="Ex: Os problemas sociais afeta diretamente a população."></textarea>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Categoria</label>
+          <select class="form-select" id="f-categoria">
+            <option value="cv">Concordância Verbal</option>
+            <option value="cn">Concordância Nominal</option>
+            <option value="rv">Regência Verbal</option>
+            <option value="rn">Regência Nominal</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">O trecho tem erro?</label>
+          <div class="form-radio-group">
+            <label class="form-radio" id="radio-sim" onclick="setTemErro(true)">
+              <input type="radio" name="tem-erro" value="sim">
+              <span class="form-radio-label">Tem erro</span>
+            </label>
+            <label class="form-radio" id="radio-nao" onclick="setTemErro(false)">
+              <input type="radio" name="tem-erro" value="nao">
+              <span class="form-radio-label">Correto</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group" id="correcao-group">
+        <label class="form-label">Forma correta (apenas se houver erro)</label>
+        <textarea class="form-textarea" id="f-correcao" placeholder="Ex: Os problemas sociais afetam diretamente a população." style="min-height:70px"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Justificativa / Explicação gramatical</label>
+        <textarea class="form-textarea" id="f-justificativa" placeholder="Ex: O sujeito 'os problemas' é plural; portanto, o verbo deve concordar: 'afetam'..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Opções de resposta (marque a correta ✓)</label>
+        <div class="options-list" id="options-list"></div>
+        <button class="btn btn-secondary btn-sm" style="margin-top:8px" onclick="addOpcao()">+ Adicionar opção</button>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="fecharModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarQuestao()">Salvar questão</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CONFIRM DIALOG ══ -->
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-box">
+    <div class="confirm-icon" id="confirm-icon">⚠️</div>
+    <div class="confirm-title" id="confirm-title">Confirmar ação</div>
+    <div class="confirm-msg" id="confirm-msg">Tem certeza?</div>
+    <div class="confirm-actions">
+      <button class="btn btn-secondary" onclick="fecharConfirm()">Cancelar</button>
+      <button class="btn btn-danger" id="confirm-ok">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <div class="toast-dot"></div>
+  <span id="toast-msg"></span>
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+//  BANCO PADRÃO
+// ══════════════════════════════════════════════
+const DEFAULT_DB=[
+  {id:1,trecho:"Os problemas sociais afeta diretamente a população.",categoria:"cv",temErro:true,correcao:"Os problemas sociais afetam diretamente a população.",justificativa:"O sujeito 'os problemas' é plural; portanto, o verbo deve concordar em número: 'afetam'. A concordância verbal determina que o verbo concorde com seu sujeito em pessoa e número.",opcoes:["Correto — sem erros","Erro de concordância verbal","Erro de regência verbal","Erro de concordância nominal"],correta:1},
+  {id:2,trecho:"O acesso à educação implica em melhorias sociais.",categoria:"rv",temErro:true,correcao:"O acesso à educação implica melhorias sociais.",justificativa:"O verbo 'implicar' no sentido de 'acarretar/causar' é transitivo direto — não exige preposição. O correto é 'implica melhorias', sem 'em'. Com preposição, muda o sentido para 'comprometer-se'.",opcoes:["Correto — sem erros","Erro de concordância verbal","Erro de regência verbal","Erro de concordância nominal"],correta:2},
+  {id:3,trecho:"A maioria dos jovens não sabem lidar com pressão.",categoria:"cv",temErro:true,correcao:"A maioria dos jovens não sabe lidar com pressão.",justificativa:"'A maioria' é núcleo singular do sujeito. O verbo concorda com esse núcleo: 'sabe'. A concordância atrativa com 'jovens' é aceita em contextos informais, mas a norma culta exige o singular.",opcoes:["Correto — sem erros","Erro de concordância verbal","Erro de regência verbal","Erro de concordância nominal"],correta:1},
+  {id:4,trecho:"Fazem anos que esse problema persiste no país.",categoria:"cv",temErro:true,correcao:"Faz anos que esse problema persiste no país.",justificativa:"Verbos que indicam tempo decorrido (fazer, haver) são impessoais e ficam sempre no singular: 'Faz anos', 'Há anos'. Não há sujeito, portanto não há flexão de número.",opcoes:["Correto — sem erros","Erro de concordância verbal","Erro de regência verbal","Erro no uso de 'fazer'"],correta:1},
+  {id:5,trecho:"Os dados apresentados mostram uma realidade preocupante.",categoria:"cn",temErro:false,correcao:"",justificativa:"O trecho está correto. 'Apresentados' concorda em gênero e número com 'os dados' (masculino plural). A concordância nominal está em plena conformidade com a norma-padrão.",opcoes:["Correto — sem erros","Erro de concordância verbal","Erro de concordância nominal","Erro de regência verbal"],correta:0},
+  {id:6,trecho:"Eles chegaram em casa cansados após a viagem.",categoria:"rv",temErro:true,correcao:"Eles chegaram a casa cansados após a viagem.",justificativa:"O verbo 'chegar' rege a preposição 'a', não 'em': chegar a casa, a São Paulo, ao trabalho. O uso de 'em' é marcador de informalidade, não aceito na norma culta escrita.",opcoes:["Correto — sem erros","Erro de regência verbal","Erro de concordância verbal","Erro de concordância nominal"],correta:1},
+  {id:7,trecho:"É necessário que todos compareçam a reunião.",categoria:"rn",temErro:true,correcao:"É necessário que todos compareçam à reunião.",justificativa:"O verbo 'comparecer' é transitivo indireto e rege a preposição 'a'. Antes de 'a reunião' (artigo definido feminino), ocorre a crase: 'à reunião'. A omissão da crase é erro de regência nominal.",opcoes:["Correto — sem erros","Erro de concordância nominal","Erro de regência — falta crase","Erro de concordância verbal"],correta:2},
+  {id:8,trecho:"As informações que o candidato se referiu eram falsas.",categoria:"rv",temErro:true,correcao:"As informações a que o candidato se referiu eram falsas.",justificativa:"'Referir-se' é transitivo indireto e exige a preposição 'a'. O pronome relativo deve ser precedido da preposição: 'a que' (ou 'às quais'). Omiti-la é erro de regência verbal.",opcoes:["Correto — sem erros","Erro de regência verbal","Erro de concordância verbal","Erro de concordância nominal"],correta:1},
+  {id:9,trecho:"Há muitas décadas, o desemprego assola as famílias brasileiras.",categoria:"cv",temErro:false,correcao:"",justificativa:"O trecho está correto. 'Há' indica tempo passado decorrido, emprego adequado. O verbo 'assola' está no singular concordando com 'o desemprego'. Nenhum desvio da norma culta.",opcoes:["Correto — sem erros","Erro de concordância verbal","Erro de regência verbal","Erro no emprego de 'há'"],correta:0},
+  {id:10,trecho:"O governo visa o bem-estar de todos os cidadãos.",categoria:"rv",temErro:true,correcao:"O governo visa ao bem-estar de todos os cidadãos.",justificativa:"No sentido de 'pretender/objetivar', 'visar' é transitivo indireto e exige preposição 'a': visa ao bem-estar. Sem preposição, 'visar' significa 'mirar/apontar com a mira'.",opcoes:["Correto — sem erros","Erro de regência verbal","Erro de concordância verbal","Erro de concordância nominal"],correta:1},
+  {id:11,trecho:"Existem várias soluções possíveis para esse dilema social.",categoria:"cv",temErro:false,correcao:"",justificativa:"O trecho está correto. 'Existem' concorda com 'várias soluções' (sujeito posposto, plural). 'Possíveis' concorda com 'soluções' (feminino plural). Nenhum desvio.",opcoes:["Correto — sem erros","Erro de concordância verbal","Erro de regência verbal","Erro de concordância nominal"],correta:0},
+  {id:12,trecho:"Os alunos que assistiram a aula aprenderam mais.",categoria:"rv",temErro:true,correcao:"Os alunos que assistiram à aula aprenderam mais.",justificativa:"'Assistir' no sentido de 'ver/presenciar' é transitivo indireto e rege a preposição 'a'. Antes de artigo feminino, ocorre crase: 'assistiram à aula'. Sem preposição, o sentido muda para 'ajudar'.",opcoes:["Correto — sem erros","Erro de regência verbal","Erro de concordância verbal","Erro de concordância nominal"],correta:1},
+  {id:13,trecho:"Cada um dos estudantes deve entregar seus trabalhos.",categoria:"cv",temErro:false,correcao:"",justificativa:"O trecho está correto. 'Cada um' é núcleo singular; o verbo 'deve' está no singular, concordando adequadamente. Construção perfeitamente adequada à norma culta.",opcoes:["Correto — sem erros","Erro de concordância nominal","Erro de concordância verbal","Erro de regência verbal"],correta:0},
+  {id:14,trecho:"Nós preferimos essa estratégia do que a anterior.",categoria:"rv",temErro:true,correcao:"Nós preferimos essa estratégia à anterior.",justificativa:"'Preferir' rege objeto direto e indireto sem a conjunção 'do que': prefiro X a Y. O correto é 'prefiro essa estratégia à anterior'. O uso de 'do que' após 'preferir' é construção rejeitada pela norma culta.",opcoes:["Correto — sem erros","Erro de regência verbal","Erro de concordância verbal","Erro de concordância nominal"],correta:1},
+  {id:15,trecho:"Os livros foram entregues aos alunos mais necessitados.",categoria:"cn",temErro:false,correcao:"",justificativa:"O trecho está correto. 'Entregues' concorda com 'os livros' (masculino plural) e 'necessitados' concorda com 'alunos' (masculino plural). Concordância nominal plena com a norma culta.",opcoes:["Correto — sem erros","Erro de concordância nominal","Erro de concordância verbal","Erro de regência verbal"],correta:0}
+];
+
+// ══════════════════════════════════════════════
+//  ESTADO
+// ══════════════════════════════════════════════
+let db=[];
+let editandoId=null;
+let temErroAtual=true;
+let filtroAtual='todos';
+
+function loadDB(){
+  const saved=localStorage.getItem('raiox_db');
+  if(saved){try{db=JSON.parse(saved);}catch(e){db=[...DEFAULT_DB];}}
+  else{db=[...DEFAULT_DB];}
+}
+function saveDB(){localStorage.setItem('raiox_db',JSON.stringify(db));}
+function nextId(){return db.length?Math.max(...db.map(q=>q.id))+1:1;}
+
+loadDB();
+
+// ══════════════════════════════════════════════
+//  NAVEGAÇÃO
+// ══════════════════════════════════════════════
+function goPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  event&&event.target&&event.target.classList.add('active');
+  // update active nav
+  document.querySelectorAll('.nav-btn').forEach(b=>{
+    if(b.getAttribute('onclick')&&b.getAttribute('onclick').includes("'"+id+"'"))b.classList.add('active');
+  });
+  renderAll();
+}
+
+// ══════════════════════════════════════════════
+//  RENDER
+// ══════════════════════════════════════════════
+const CATS={cv:'badge-cv',cn:'badge-cn',rv:'badge-rv',rn:'badge-rn'};
+const CATNAMES={cv:'Conc. Verbal',cn:'Conc. Nominal',rv:'Reg. Verbal',rn:'Reg. Nominal'};
+
+function renderAll(){
+  renderHome();renderBanco();renderGerenciar();updateStats();
+}
+
+function updateStats(){
+  document.getElementById('stat-total').textContent=db.length;
+  document.getElementById('stat-erros').textContent=db.filter(q=>q.temErro).length;
+  document.getElementById('stat-corretos').textContent=db.filter(q=>!q.temErro).length;
+  document.getElementById('jogo-count').textContent=db.length;
+}
+
+function renderHome(){
+  const ul=document.getElementById('home-q-list');
+  const recent=db.slice(-4).reverse();
+  ul.innerHTML=recent.length?recent.map(q=>cardHTML(q,false)).join(''):'<div class="empty-state"><div class="empty-icon">📚</div><div class="empty-title">Banco vazio</div><div class="empty-sub">Adicione a primeira questão para começar.</div></div>';
+  bindCards(ul);
+}
+
+function renderBanco(){
+  const ul=document.getElementById('banco-q-list');
+  const search=(document.getElementById('search-input')||{value:''}).value.toLowerCase();
+  let list=db.filter(q=>{
+    if(filtroAtual==='com-erro')return q.temErro;
+    if(filtroAtual==='correto')return !q.temErro;
+    if(['cv','cn','rv','rn'].includes(filtroAtual))return q.categoria===filtroAtual;
+    return true;
+  });
+  if(search)list=list.filter(q=>q.trecho.toLowerCase().includes(search)||q.justificativa.toLowerCase().includes(search));
+  ul.innerHTML=list.length?list.map(q=>cardHTML(q,false)).join(''):'<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-title">Nenhuma questão encontrada</div><div class="empty-sub">Tente outro filtro ou busca.</div></div>';
+  bindCards(ul);
+}
+
+function renderGerenciar(){
+  const ul=document.getElementById('gerenciar-list');
+  ul.innerHTML=db.length?db.map(q=>cardHTML(q,true)).join(''):'<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">Banco vazio</div><div class="empty-sub">Adicione questões para gerenciá-las aqui.</div></div>';
+  bindCards(ul);
+}
+
+function cardHTML(q,showActions){
+  const catClass=CATS[q.categoria]||'badge-cv';
+  const catName=CATNAMES[q.categoria]||q.categoria;
+  const erroBadge=q.temErro?'<span class="badge badge-erro">Com erro</span>':'<span class="badge badge-ok">Correto</span>';
+  const opts=q.opcoes.map((o,i)=>`<div class="q-opt${i===q.correta?' correct-opt':''}">${i===q.correta?'✓ ':''} ${o}</div>`).join('');
+  const actions=showActions?`<div class="q-actions"><button class="btn btn-secondary btn-sm" onclick="editarQuestao(${q.id})">Editar</button><button class="btn btn-danger btn-sm" onclick="deletarQuestao(${q.id})">Excluir</button></div>`:'';
+  const correcaoHTML=q.temErro&&q.correcao?`<div class="q-section"><div class="q-section-label">Forma correta</div><div class="q-correction">${esc(q.correcao)}</div></div>`:'';
+  return`<div class="q-card" id="qcard-${q.id}">
+    <div class="q-card-header" onclick="toggleCard(${q.id})">
+      <div class="q-number">${q.id}</div>
+      <div class="q-trecho">${esc(q.trecho)}</div>
+      <div class="q-badges">${erroBadge}<span class="badge ${catClass}">${catName}</span></div>
+    </div>
+    <div class="q-body" id="qbody-${q.id}">
+      <div class="q-section"><div class="q-section-label">Opções de resposta</div><div class="q-options">${opts}</div></div>
+      ${correcaoHTML}
+      <div class="q-section"><div class="q-section-label">Justificativa</div><div class="q-section-content">${esc(q.justificativa)}</div></div>
+      ${actions}
+    </div>
+  </div>`;
+}
+
+function bindCards(container){
+  // cards already have onclick inline
+}
+
+function toggleCard(id){
+  const body=document.getElementById('qbody-'+id);
+  body.classList.toggle('open');
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+// ══════════════════════════════════════════════
+//  FILTROS
+// ══════════════════════════════════════════════
+function setFilter(f,el){
+  filtroAtual=f;
+  document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  renderBanco();
+}
+
+// ══════════════════════════════════════════════
+//  MODAL
+// ══════════════════════════════════════════════
+function abrirModal(id){
+  editandoId=id||null;
+  document.getElementById('modal-title').textContent=id?'Editar Questão':'Nova Questão';
+  const q=id?db.find(x=>x.id===id):null;
+
+  document.getElementById('f-trecho').value=q?q.trecho:'';
+  document.getElementById('f-correcao').value=q?q.correcao:'';
+  document.getElementById('f-justificativa').value=q?q.justificativa:'';
+  document.getElementById('f-categoria').value=q?q.categoria:'cv';
+  setTemErro(q?q.temErro:true);
+
+  renderOpcoes(q?q.opcoes:['Correto — sem erros','Erro de concordância verbal','Erro de regência verbal','Erro de concordância nominal'],q?q.correta:1);
+
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function fecharModal(){document.getElementById('modal-overlay').classList.remove('open');}
+function fecharModalOverlay(e){if(e.target.id==='modal-overlay')fecharModal();}
+
+function setTemErro(v){
+  temErroAtual=v;
+  document.getElementById('radio-sim').classList.toggle('selected',v);
+  document.getElementById('radio-nao').classList.toggle('selected',!v);
+  document.getElementById('correcao-group').style.display=v?'block':'none';
+}
+
+let optCount=0;
+function renderOpcoes(opts,correta){
+  const list=document.getElementById('options-list');
+  optCount=0;list.innerHTML='';
+  opts.forEach((o,i)=>addOpcao(o,i===correta));
+}
+
+function addOpcao(val,checked){
+  const list=document.getElementById('options-list');
+  const i=optCount++;
+  const div=document.createElement('div');div.className='option-row';div.id='optrow-'+i;
+  div.innerHTML=`<div class="opt-check${checked?' checked':''}" id="optcheck-${i}" onclick="toggleCorrect(${i})">✓</div><input class="opt-input${checked?' correct-input':''}" id="optval-${i}" type="text" placeholder="Opção ${i+1}..." value="${val||''}"><button class="btn btn-danger btn-sm" style="padding:7px 8px;flex-shrink:0" onclick="remOpcao(${i})">✕</button>`;
+  list.appendChild(div);
+}
+
+function toggleCorrect(i){
+  for(let j=0;j<optCount;j++){
+    const c=document.getElementById('optcheck-'+j);
+    const inp=document.getElementById('optval-'+j);
+    if(c){c.classList.toggle('checked',j===i);if(inp)inp.classList.toggle('correct-input',j===i);}
+  }
+}
+
+function remOpcao(i){
+  const row=document.getElementById('optrow-'+i);
+  if(row)row.remove();
+}
+
+function salvarQuestao(){
+  const trecho=document.getElementById('f-trecho').value.trim();
+  const justificativa=document.getElementById('f-justificativa').value.trim();
+  if(!trecho){toast('Informe o trecho!','warning');return;}
+  if(!justificativa){toast('Informe a justificativa!','warning');return;}
+
+  const opcoes=[];let correta=-1;
+  for(let i=0;i<optCount;i++){
+    const inp=document.getElementById('optval-'+i);
+    if(!inp)continue;
+    const val=inp.value.trim();if(!val)continue;
+    const idx=opcoes.length;
+    const chk=document.getElementById('optcheck-'+i);
+    if(chk&&chk.classList.contains('checked'))correta=idx;
+    opcoes.push(val);
+  }
+  if(opcoes.length<2){toast('Adicione pelo menos 2 opções!','warning');return;}
+  if(correta<0){toast('Marque a opção correta!','warning');return;}
+
+  const nova={
+    id:editandoId||nextId(),
+    trecho,
+    categoria:document.getElementById('f-categoria').value,
+    temErro:temErroAtual,
+    correcao:document.getElementById('f-correcao').value.trim(),
+    justificativa,
+    opcoes,correta
+  };
+  if(editandoId){
+    const idx=db.findIndex(q=>q.id===editandoId);
+    if(idx>-1)db[idx]=nova;
+  } else {
+    db.push(nova);
+  }
+  saveDB();fecharModal();renderAll();
+  toast(editandoId?'Questão atualizada!':'Questão adicionada!','success');
+}
+
+function editarQuestao(id){abrirModal(id);}
+
+function deletarQuestao(id){
+  mostrarConfirm('Excluir questão','Esta ação não pode ser desfeita. A questão será removida do banco.',()=>{
+    db=db.filter(q=>q.id!==id);saveDB();renderAll();toast('Questão excluída','success');
+  });
+}
+
+// ══════════════════════════════════════════════
+//  IMPORT / EXPORT
+// ══════════════════════════════════════════════
+function exportar(){
+  const json=JSON.stringify(db,null,2);
+  const blob=new Blob([json],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download='raio-x-sintatico-banco.json';a.click();
+  URL.revokeObjectURL(url);
+  toast('Exportado com sucesso!','success');
+}
+
+function importar(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    try{
+      const data=JSON.parse(ev.target.result);
+      if(!Array.isArray(data))throw new Error();
+      let added=0;
+      const ids=new Set(db.map(q=>q.id));
+      data.forEach(q=>{
+        if(q.trecho&&q.justificativa){
+          const nq={...q,id:nextId()};
+          db.push(nq);added++;
+        }
+      });
+      saveDB();renderAll();
+      document.getElementById('import-status').textContent=`${added} questão(ões) importada(s)`;
+      toast(`${added} questão(ões) importada(s)!`,'success');
+    }catch(err){toast('Arquivo inválido!','error');}
+  };
+  reader.readAsText(file);
+}
+
+function confirmarReset(){
+  mostrarConfirm('Restaurar padrão','Todas as questões atuais serão substituídas pelas 15 questões originais. Ação irreversível.',()=>{
+    db=[...DEFAULT_DB.map(q=>({...q}))];saveDB();renderAll();toast('Banco restaurado!','success');
+  });
+}
+
+function confirmarApagar(){
+  mostrarConfirm('Apagar banco inteiro','Todas as questões serão removidas permanentemente. Ação irreversível.',()=>{
+    db=[];saveDB();renderAll();toast('Banco apagado.','warning');
+  });
+}
+
+// ══════════════════════════════════════════════
+//  CONFIRM DIALOG
+// ══════════════════════════════════════════════
+let confirmCallback=null;
+function mostrarConfirm(title,msg,cb){
+  confirmCallback=cb;
+  document.getElementById('confirm-title').textContent=title;
+  document.getElementById('confirm-msg').textContent=msg;
+  document.getElementById('confirm-overlay').classList.add('open');
+}
+function fecharConfirm(){document.getElementById('confirm-overlay').classList.remove('open');}
+document.getElementById('confirm-ok').onclick=()=>{fecharConfirm();if(confirmCallback)confirmCallback();};
+document.getElementById('confirm-overlay').onclick=e=>{if(e.target.id==='confirm-overlay')fecharConfirm();};
+
+// ══════════════════════════════════════════════
+//  TOAST
+// ══════════════════════════════════════════════
+let toastTimer;
+function toast(msg,type='success'){
+  const t=document.getElementById('toast');
+  document.getElementById('toast-msg').textContent=msg;
+  t.className='toast '+type+' show';
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+// ══════════════════════════════════════════════
+//  JOGO
+// ══════════════════════════════════════════════
+function abrirJogo(){
+  const jogo = buildJogoHTML();
+  const blob = new Blob([jogo], {type:'text/html'});
+  const url = URL.createObjectURL(blob);
+  window.open(url,'_blank');
+}
+
+function buildJogoHTML(){
+  const questoes = JSON.stringify(db);
+  return `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Raio-X Sintático — Jogo</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0a0a0f;--s:#12121a;--s2:#1a1a25;--b:#2a2a3d;--b2:#3a3a55;--acc:#f0c040;--acc2:#e85d3a;--acc3:#4ecdc4;--t:#f0ede8;--t2:#9a97a8;--t3:#5a576a;--bb:'Bebas Neue';--dm:'DM Sans',sans-serif;--mono:'JetBrains Mono',monospace}
+body{font-family:var(--dm);background:var(--bg);color:var(--t);min-height:100vh;display:flex;flex-direction:column}
+.hdr{background:var(--s);border-bottom:1px solid var(--b);padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between}
+.logo{font-family:var(--bb);font-size:20px;letter-spacing:2px;color:var(--acc)}
+.scores{display:flex;gap:8px}
+.sp{padding:6px 14px;border-radius:20px;font-weight:700;font-size:15px}
+.spa{background:rgba(240,192,64,0.1);color:var(--acc)}
+.spb{background:rgba(232,93,58,0.12);color:var(--acc2)}
+.main{flex:1;padding:2rem;max-width:760px;margin:0 auto;width:100%}
+.setup{text-align:center;padding:3rem 0}
+.setup h1{font-family:var(--bb);font-size:48px;letter-spacing:3px;color:var(--acc);margin-bottom:1rem}
+.setup p{color:var(--t2);margin-bottom:2rem;font-size:15px}
+.tinputs{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1.5rem;max-width:420px;margin-left:auto;margin-right:auto}
+.tc{background:var(--s);border:1px solid var(--b);border-radius:10px;padding:1rem}
+.tc:first-child{border-top:3px solid var(--acc)}
+.tc:last-child{border-top:3px solid var(--acc2)}
+.tc label{display:block;font-family:var(--mono);font-size:10px;color:var(--t3);letter-spacing:2px;margin-bottom:6px}
+.tc input{width:100%;background:var(--s2);border:1px solid var(--b2);border-radius:8px;padding:8px;color:var(--t);font-family:var(--bb);font-size:18px;letter-spacing:1px;outline:none}
+select.sel{background:var(--s2);border:1px solid var(--b2);border-radius:8px;padding:10px 14px;color:var(--t);font-family:var(--dm);font-size:14px;margin-bottom:1.5rem}
+.btn{padding:12px 28px;border-radius:10px;font-family:var(--dm);font-size:14px;font-weight:700;cursor:pointer;border:none;transition:all 0.2s}
+.btnp{background:var(--acc);color:#0a0a0f}
+.btnp:hover{background:#f5d060}
+.btns{background:var(--s);border:1px solid var(--b2);color:var(--t);margin-right:8px}
+.game-section{display:none}
+.game-section.show{display:block}
+.turn-row{display:flex;align-items:center;gap:8px;margin-bottom:1rem}
+.turn-dot{width:10px;height:10px;border-radius:50%}
+.ta .turn-dot{background:var(--acc)}
+.tb .turn-dot{background:var(--acc2)}
+.turn-lbl{font-family:var(--mono);font-size:12px;color:var(--t2)}
+.rnd{font-family:var(--mono);font-size:11px;color:var(--t3);margin-bottom:1rem}
+.trecho-box{background:var(--s);border-left:4px solid var(--acc);border-radius:10px;padding:1.25rem;margin-bottom:1rem}
+.tlbl{font-family:var(--mono);font-size:10px;color:var(--acc);letter-spacing:2px;margin-bottom:8px}
+.ttext{font-size:18px;font-style:italic;font-weight:500;line-height:1.5}
+.tbar-w{background:var(--b);border-radius:4px;height:6px;margin-bottom:1rem;overflow:hidden}
+.tbar{height:6px;border-radius:4px;background:var(--acc);transition:width 1s linear,background 0.3s}
+.pow-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:1rem}
+.pow{background:var(--s);border:1px solid var(--b);border-radius:10px;padding:10px 8px;cursor:pointer;text-align:center;font-family:var(--dm);transition:all 0.15s}
+.pow:hover:not(:disabled){border-color:rgba(240,192,64,0.4);background:rgba(240,192,64,0.06)}
+.pow:disabled{opacity:0.4;cursor:not-allowed}
+.pow-icon{font-size:20px;display:block;margin-bottom:4px}
+.pow-name{font-size:11px;font-weight:700}
+.pow-pts{font-size:10px;font-family:var(--mono);color:var(--t3);display:block;margin-top:2px}
+.pow-notice{background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.2);border-radius:8px;padding:8px 12px;font-size:12px;color:#a78bfa;font-family:var(--mono);margin-bottom:1rem;display:none}
+.pow-notice.show{display:block}
+.ans-panel{background:var(--s);border:1px solid var(--b);border-radius:10px;padding:1.25rem;margin-bottom:1rem}
+.ans-q{font-size:13px;font-weight:700;color:var(--t2);margin-bottom:10px;font-family:var(--mono)}
+.ans-opts{display:flex;flex-direction:column;gap:8px}
+.obt{border:1px solid var(--b2);border-radius:8px;padding:10px 14px;background:var(--s2);cursor:pointer;font-family:var(--dm);font-size:14px;text-align:left;color:var(--t);transition:all 0.15s;font-weight:500}
+.obt:hover{border-color:rgba(240,192,64,0.4);background:rgba(240,192,64,0.06)}
+.obt.correct{background:rgba(78,205,196,0.1);border-color:var(--acc3);color:var(--acc3);pointer-events:none}
+.obt.wrong{background:rgba(232,93,58,0.1);border-color:var(--acc2);color:var(--acc2);pointer-events:none}
+.obt.neutral{opacity:0.4;pointer-events:none}
+.fb{border-radius:10px;padding:1rem 1.25rem;margin-bottom:1rem;display:none}
+.fb.show{display:block}
+.fb.ok{background:rgba(78,205,196,0.08);border:1px solid rgba(78,205,196,0.2)}
+.fb.err{background:rgba(232,93,58,0.08);border:1px solid rgba(232,93,58,0.2)}
+.fb-hdr{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.fb-ico{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+.fb.ok .fb-ico{background:var(--acc3);color:#0a0a0f}
+.fb.err .fb-ico{background:var(--acc2);color:#fff}
+.fb-ttl{font-weight:700;font-size:14px}
+.fb.ok .fb-ttl{color:var(--acc3)}
+.fb.err .fb-ttl{color:var(--acc2)}
+.fb-rule{font-size:13px;line-height:1.6;color:var(--t)}
+.fb-cor{font-family:var(--mono);font-size:12px;padding:6px 10px;border-radius:6px;margin-top:8px;display:inline-block}
+.fb.ok .fb-cor{background:rgba(78,205,196,0.15);color:var(--acc3)}
+.fb.err .fb-cor{background:rgba(232,93,58,0.12);color:var(--acc2)}
+.pb{display:inline-block;padding:4px 10px;border-radius:20px;font-family:var(--mono);font-size:12px;font-weight:700;margin-top:8px}
+.pb.plus{background:rgba(78,205,196,0.1);color:var(--acc3)}
+.pb.zero{background:rgba(240,192,64,0.1);color:var(--acc)}
+.pb.bonus{background:rgba(167,139,250,0.1);color:#a78bfa}
+.rival{background:rgba(240,192,64,0.06);border:1px solid rgba(240,192,64,0.2);border-radius:10px;padding:1rem;margin-bottom:1rem;display:none;align-items:center;gap:12px}
+.rival.show{display:flex}
+.rival-t{font-size:13px;color:var(--acc);font-weight:700;flex:1}
+.btn-nx{width:100%;background:var(--s);border:1px solid var(--b2);border-radius:10px;padding:12px;font-family:var(--dm);font-size:14px;font-weight:700;cursor:pointer;color:var(--t);transition:all 0.2s;display:none}
+.btn-nx.show{display:block}
+.btn-nx:hover{background:var(--acc);color:#0a0a0f;border-color:var(--acc)}
+.final{text-align:center;padding:3rem 0;display:none}
+.final.show{display:block}
+.win{border-radius:16px;padding:2rem;margin-bottom:1.5rem}
+.win.a{background:rgba(240,192,64,0.08);border:1px solid rgba(240,192,64,0.2)}
+.win.b{background:rgba(232,93,58,0.08);border:1px solid rgba(232,93,58,0.2)}
+.win.tie{background:rgba(78,205,196,0.08);border:1px solid rgba(78,205,196,0.2)}
+.win-lbl{font-family:var(--mono);font-size:10px;letter-spacing:3px;margin-bottom:8px}
+.win.a .win-lbl{color:var(--acc)}
+.win.b .win-lbl{color:var(--acc2)}
+.win.tie .win-lbl{color:var(--acc3)}
+.win-nm{font-family:var(--bb);font-size:36px;letter-spacing:2px}
+.win.a .win-nm{color:var(--acc)}
+.win.b .win-nm{color:var(--acc2)}
+.win.tie .win-nm{color:var(--acc3)}
+.fs{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:2rem}
+.fsc{border-radius:12px;padding:1rem;text-align:center}
+.fsc.a{background:rgba(240,192,64,0.08);border:1px solid rgba(240,192,64,0.15)}
+.fsc.b{background:rgba(232,93,58,0.08);border:1px solid rgba(232,93,58,0.15)}
+.fs-nm{font-family:var(--mono);font-size:10px;letter-spacing:2px;margin-bottom:6px}
+.fsc.a .fs-nm{color:var(--acc)}
+.fsc.b .fs-nm{color:var(--acc2)}
+.fs-pts{font-family:var(--bb);font-size:42px}
+.fsc.a .fs-pts{color:var(--acc)}
+.fsc.b .fs-pts{color:var(--acc2)}
+.fs-lbl{font-size:11px;color:var(--t3);font-family:var(--mono)}
+</style></head><body>
+<div class="hdr">
+  <div class="logo">Raio-X Sintático</div>
+  <div class="scores">
+    <div class="sp spa"><span id="sna">Equipe A</span> <span id="sa">0</span></div>
+    <div class="sp spb"><span id="sb">0</span> <span id="snb">Equipe B</span></div>
+  </div>
+</div>
+<div class="main">
+  <div id="setup-sec">
+    <div class="setup">
+      <h1>RAIO-X SINTÁTICO</h1>
+      <p>Configure as equipes e inicie o jogo.</p>
+      <div class="tinputs">
+        <div class="tc"><label>Equipe A</label><input type="text" id="na" value="Equipe A" maxlength="16"></div>
+        <div class="tc"><label>Equipe B</label><input type="text" id="nb" value="Equipe B" maxlength="16"></div>
+      </div>
+      <div>
+        <select class="sel" id="nr"><option value="5">5 rodadas</option><option value="8" selected>8 rodadas</option><option value="10">10 rodadas</option><option value="12">12 rodadas</option></select>
+      </div>
+      <button class="btn btnp" onclick="startJogo()">Iniciar o jogo →</button>
+    </div>
+  </div>
+  <div class="game-section" id="game-sec">
+    <div class="rnd" id="rnd-display">Rodada 1 / 8</div>
+    <div class="turn-row" id="turn-row">
+      <div class="turn-dot"></div>
+      <span class="turn-lbl" id="turn-lbl">Vez de: Equipe A</span>
+    </div>
+    <div class="trecho-box"><div class="tlbl">TRECHO PARA ANÁLISE</div><div class="ttext" id="ttext">...</div></div>
+    <div class="tbar-w"><div class="tbar" id="tbar"></div></div>
+    <div class="pow-grid">
+      <button class="pow" id="pg" onclick="usePow('g')"><span class="pow-icon">🤝</span><span class="pow-name">Consulta</span><span class="pow-pts">2 pts</span></button>
+      <button class="pow" id="pt" onclick="usePow('t')"><span class="pow-icon">🎭</span><span class="pow-name">Traição</span><span class="pow-pts">4 pts se acertar</span></button>
+      <button class="pow" id="pc" onclick="usePow('c')"><span class="pow-icon">⭐</span><span class="pow-name">Curinga</span><span class="pow-pts">2 pts · 1×/rodada</span></button>
+    </div>
+    <div class="pow-notice" id="pn"></div>
+    <div class="ans-panel" id="ap"><div class="ans-q">O trecho contém erro gramatical?</div><div class="ans-opts" id="ao"></div></div>
+    <div class="fb" id="fb"><div class="fb-hdr"><div class="fb-ico" id="fbi"></div><span class="fb-ttl" id="fbt"></span></div><div class="fb-rule" id="fbr"></div><div class="fb-cor" id="fbc"></div><div id="fbp"></div></div>
+    <div class="rival" id="rv"><span class="rival-t" id="rvt"></span><button class="btn btnp" onclick="rivalTry(true)" style="padding:8px 14px;font-size:13px">Tentar</button><button class="btn btns" onclick="rivalTry(false)" style="padding:8px 14px;font-size:13px">Pular</button></div>
+    <button class="btn-nx" id="bnx" onclick="nextRnd()">Próxima rodada →</button>
+  </div>
+  <div class="final" id="final-sec">
+    <div class="win" id="wb"><div class="win-lbl" id="wl">VENCEDOR</div><div class="win-nm" id="wn"></div></div>
+    <div class="fs"><div class="fsc a"><div class="fs-nm" id="fn-a">EQUIPE A</div><div class="fs-pts" id="fp-a">0</div><div class="fs-lbl">pontos</div></div><div class="fsc b"><div class="fs-nm" id="fn-b">EQUIPE B</div><div class="fs-pts" id="fp-b">0</div><div class="fs-lbl">pontos</div></div></div>
+    <button class="btn btnp" onclick="location.reload()">Jogar novamente</button>
+  </div>
+</div>
+<script>
+const QS=${questoes};
+let st={};
+function shuf(a){let r=[...a];for(let i=r.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[r[i],r[j]]=[r[j],r[i]];}return r;}
+function startJogo(){
+  const na=document.getElementById('na').value||'Equipe A';
+  const nb=document.getElementById('nb').value||'Equipe B';
+  const nr=parseInt(document.getElementById('nr').value);
+  st={na,nb,sa:0,sb:0,round:1,nr,qs:shuf(QS).slice(0,nr),qi:0,team:'a',pu:false,pp:null,cu:false,ti:null,tl:60,ans:false,pts:0};
+  document.getElementById('sna').textContent=na;document.getElementById('snb').textContent=nb;
+  document.getElementById('setup-sec').style.display='none';
+  document.getElementById('game-sec').classList.add('show');
+  loadQ();
+}
+function loadQ(){
+  const q=st.qs[st.qi];
+  document.getElementById('rnd-display').textContent='Rodada '+st.round+' / '+st.nr;
+  const tr=document.getElementById('turn-row');tr.className='turn-row '+st.team;
+  document.getElementById('turn-lbl').textContent='Vez de: '+(st.team==='a'?st.na:st.nb);
+  document.getElementById('ttext').textContent=q.trecho;
+  st.pu=false;st.pp=null;st.cu=false;st.ans=false;st.pts=0;
+  ['pg','pt','pc'].forEach(id=>{const b=document.getElementById(id);b.disabled=false;});
+  document.getElementById('pn').className='pow-notice';
+  document.getElementById('fb').className='fb';
+  document.getElementById('rv').className='rival';
+  document.getElementById('bnx').className='btn-nx';
+  document.getElementById('ap').style.display='block';
+  renderOpts(q);startTimer();
+}
+function renderOpts(q){
+  const ao=document.getElementById('ao');ao.innerHTML='';
+  q.opcoes.forEach((o,i)=>{const b=document.createElement('button');b.className='obt';b.textContent=o;b.onclick=()=>subAns(i);ao.appendChild(b);});
+}
+function startTimer(){
+  clearInterval(st.ti);st.tl=60;
+  const bar=document.getElementById('tbar');bar.style.width='100%';bar.style.background='#f0c040';
+  st.ti=setInterval(()=>{st.tl--;const p=Math.max(0,(st.tl/60)*100);bar.style.width=p+'%';
+    if(st.tl<=15)bar.style.background='#e85d3a';else if(st.tl<=30)bar.style.background='#EF9F27';
+    if(st.tl<=0){clearInterval(st.ti);timeUp();}},1000);
+}
+function timeUp(){if(st.ans)return;st.ans=true;document.querySelectorAll('.obt').forEach(b=>b.classList.add('neutral'));showFB(false,true);}
+function usePow(p){
+  if(st.pu||st.ans)return;if(p==='c'&&st.cu){alert('Curinga já usado!');return;}
+  st.pu=true;st.pp=p;['pg','pt','pc'].forEach(id=>document.getElementById(id).disabled=true);
+  if(p==='c')st.cu=true;
+  const msgs={g:'Consulta ao grupo ativada! 20 segundos. Máximo: 2 pts.',t:'Traição ativada! O adversário pode mentir. Cuidado! Acertando: 4 pts!',c:'Curinga ativado! Consulte qualquer pessoa. Vale 2 pts.'};
+  const pn=document.getElementById('pn');pn.textContent=msgs[p];pn.classList.add('show');
+}
+function subAns(idx){
+  if(st.ans)return;st.ans=true;clearInterval(st.ti);
+  const q=st.qs[st.qi];const ok=idx===q.correta;
+  document.querySelectorAll('.obt').forEach((b,i)=>{if(i===q.correta)b.classList.add('correct');else if(i===idx&&!ok)b.classList.add('wrong');else b.classList.add('neutral');});
+  if(ok){let pts=3;if(st.pp==='g'||st.pp==='c')pts=2;else if(st.pp==='t')pts=4;st.pts=pts;if(st.team==='a')st.sa+=pts;else st.sb+=pts;updSc();showFB(true,false);}
+  else{st.pts=0;showFB(false,false);}
+}
+function showFB(ok,to){
+  const q=st.qs[st.qi];const fb=document.getElementById('fb');
+  if(to){fb.className='fb err show';document.getElementById('fbi').textContent='!';document.getElementById('fbt').textContent='Tempo esgotado!';document.getElementById('fbr').textContent=q.justificativa;document.getElementById('fbc').textContent=q.correcao?'Correto: '+q.correcao:'O trecho está correto.';document.getElementById('fbp').innerHTML='<span class="pb zero">0 pts</span>';offerRival();}
+  else if(ok){fb.className='fb ok show';document.getElementById('fbi').textContent='✓';document.getElementById('fbt').textContent='Correto!';document.getElementById('fbr').textContent=q.justificativa;document.getElementById('fbc').textContent=q.correcao?'Forma correta: '+q.correcao:'O trecho já estava correto.';const cl=st.pp==='t'?'bonus':'plus';document.getElementById('fbp').innerHTML='<span class="pb '+cl+'">+'+st.pts+' ponto'+(st.pts>1?'s':'')+'</span>';document.getElementById('bnx').className='btn-nx show';}
+  else{fb.className='fb err show';document.getElementById('fbi').textContent='✗';document.getElementById('fbt').textContent='Incorreto';document.getElementById('fbr').textContent=q.justificativa;document.getElementById('fbc').textContent=q.correcao?'Correto: '+q.correcao:'Estava correto.';document.getElementById('fbp').innerHTML='<span class="pb zero">0 pts</span>';if(!st.pu)offerRival();else document.getElementById('bnx').className='btn-nx show';}
+}
+function offerRival(){const other=st.team==='a'?st.nb:st.na;document.getElementById('rvt').textContent=other+' pode tentar e ganhar 1 ponto extra!';document.getElementById('rv').className='rival show';}
+function rivalTry(go){
+  document.getElementById('rv').className='rival';
+  if(go){const q=st.qs[st.qi];const ot=st.team==='a'?'b':'a';document.querySelectorAll('.obt').forEach((b,i)=>{b.className='obt';b.disabled=false;b.onclick=()=>{document.querySelectorAll('.obt').forEach(x=>x.disabled=true);if(i===q.correta){b.classList.add('correct');if(ot==='a')st.sa+=1;else st.sb+=1;updSc();const pn=document.getElementById('pn');pn.textContent='+1 ponto para '+(ot==='a'?st.na:st.nb)+'!';pn.classList.add('show');}else{b.classList.add('wrong');document.querySelectorAll('.obt')[q.correta].classList.add('correct');}document.getElementById('bnx').className='btn-nx show';};});}
+  else{document.getElementById('bnx').className='btn-nx show';}
+}
+function updSc(){document.getElementById('sa').textContent=st.sa;document.getElementById('sb').textContent=st.sb;}
+function nextRnd(){
+  st.qi++;st.round++;st.team=st.team==='a'?'b':'a';
+  if(st.round>st.nr){showFinal();return;}
+  loadQ();
+}
+function showFinal(){
+  document.getElementById('game-sec').classList.remove('show');
+  const fs=document.getElementById('final-sec');fs.classList.add('show');
+  document.getElementById('fn-a').textContent=st.na;document.getElementById('fn-b').textContent=st.nb;
+  document.getElementById('fp-a').textContent=st.sa;document.getElementById('fp-b').textContent=st.sb;
+  const wb=document.getElementById('wb');
+  if(st.sa>st.sb){wb.className='win a';document.getElementById('wl').textContent='VENCEDOR';document.getElementById('wn').textContent=st.na;}
+  else if(st.sb>st.sa){wb.className='win b';document.getElementById('wl').textContent='VENCEDOR';document.getElementById('wn').textContent=st.nb;}
+  else{wb.className='win tie';document.getElementById('wl').textContent='EMPATE!';document.getElementById('wn').textContent=st.na+' × '+st.nb;}
+}
+<\/script></body></html>`;
+}
+
+// ══════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════
+renderAll();
+</script>
+</body>
+</html>
